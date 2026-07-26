@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Workflow Orchestrator | Automated Multi-Model Chains</title>
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- --- NOTIFICATION TOASTS --- -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- --- AUTH GATE (LOGIN / REGISTER) --- -->
+  <div id="auth-gate" class="auth-gate">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="brand-icon"><i class="fa-solid fa-network-wired"></i></div>
+        <h2>Orchestra<span class="gradient-text">AI</span></h2>
+        <p>Connect and orchestrate multiple AI models in automated pipelines</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+        <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="auth-form active">
+        <div class="form-group">
+          <label for="login-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+          <input type="email" id="login-email" required placeholder="name@domain.com">
+        </div>
+        <div class="form-group">
+          <label for="login-password"><i class="fa-solid fa-lock"></i> Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <span>Sign In</span> <i class="fa-solid fa-arrow-right-to-bracket"></i>
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="auth-form">
+        <div class="form-group">
+          <label for="reg-name"><i class="fa-solid fa-user"></i> Full Name</label>
+          <input type="text" id="reg-name" required placeholder="John Doe">
+        </div>
+        <div class="form-group">
+          <label for="reg-email"><i class="fa-solid fa-envelope"></i> Email Address</label>
+          <input type="email" id="reg-email" required placeholder="name@domain.com">
+        </div>
+        <div class="form-group">
+          <label for="reg-password"><i class="fa-solid fa-lock"></i> Password</label>
+          <input type="password" id="reg-password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          <span>Create Account</span> <i class="fa-solid fa-user-plus"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- --- MAIN WORKSPACE SHELL --- -->
+  <div id="app-shell" class="app-shell hidden">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fa-solid fa-network-wired"></i></div>
+        <h3>Orchestra<span class="gradient-text">AI</span></h3>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <a href="#dashboard" class="nav-item active" onclick="navigate('dashboard')">
+          <i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span>
+        </a>
+        <a href="#workflows" class="nav-item" onclick="navigate('workflows')">
+          <i class="fa-solid fa-diagram-project"></i> <span>My Workflows</span>
+        </a>
+        <a href="#settings" class="nav-item" onclick="navigate('settings')">
+          <i class="fa-solid fa-sliders"></i> <span>API Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-avatar" id="user-avatar-initials">U</div>
+          <div class="user-info">
+            <span class="user-name" id="user-display-name">Username</span>
+            <span class="user-role">Developer</span>
+          </div>
+        </div>
+        <button class="btn-logout" onclick="authLogout()" title="Log Out">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- --- PANEL 1: DASHBOARD --- -->
+      <section id="panel-dashboard" class="content-panel active">
+        <div class="panel-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p class="panel-subtitle">Overview of your workflows and automated executions</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCreateWorkflowModal()">
+            <i class="fa-solid fa-plus"></i> <span>New Workflow</span>
+          </button>
+        </div>
+
+        <!-- Metric Cards Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Total Workflows</span>
+              <div class="stat-icon purple"><i class="fa-solid fa-diagram-project"></i></div>
+            </div>
+            <div class="stat-value" id="stat-workflows">0</div>
+            <div class="stat-desc">Active orchestration files</div>
+          </div>
+          
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Total Executions</span>
+              <div class="stat-icon blue"><i class="fa-solid fa-circle-play"></i></div>
+            </div>
+            <div class="stat-value" id="stat-executions">0</div>
+            <div class="stat-desc">Runs executed in total</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Successful Runs</span>
+              <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+            </div>
+            <div class="stat-value" id="stat-success">0</div>
+            <div class="stat-desc">Completed without errors</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-title">Failed Runs</span>
+              <div class="stat-icon red"><i class="fa-solid fa-circle-exclamation"></i></div>
+            </div>
+            <div class="stat-value" id="stat-failed">0</div>
+            <div class="stat-desc">Halted due to API or step issues</div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Section -->
+        <div class="dashboard-body">
+          <div class="dashboard-card recent-runs-card">
+            <div class="card-header">
+              <h3>Recent Execution Logs</h3>
+              <i class="fa-solid fa-history"></i>
+            </div>
+            <div class="card-body">
+              <div class="table-container">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Workflow</th>
+                      <th>Time Ran</th>
+                      <th>Duration</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-runs-table-body">
+                    <!-- Dynamic injection -->
+                    <tr>
+                      <td colspan="5" class="table-empty">No workflow executions found yet.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- --- PANEL 2: WORKFLOWS LIST --- -->
+      <section id="panel-workflows" class="content-panel">
+        <div class="panel-header">
+          <div>
+            <h1>My Workflows</h1>
+            <p class="panel-subtitle">Manage, edit and run your AI pipelines</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCreateWorkflowModal()">
+            <i class="fa-solid fa-plus"></i> <span>Create Workflow</span>
+          </button>
+        </div>
+
+        <div class="workflows-grid" id="workflows-list-grid">
+          <!-- Dynamic Workflow Cards -->
+          <div class="grid-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading workflows...</div>
+        </div>
+      </section>
+
+      <!-- --- PANEL 3: WORKFLOW BUILDER --- -->
+      <section id="panel-builder" class="content-panel">
+        <div class="panel-header">
+          <div class="builder-breadcrumbs">
+            <a href="#workflows" onclick="navigate('workflows')"><i class="fa-solid fa-arrow-left"></i> Workflows</a>
+            <span class="divider">/</span>
+            <h1 id="builder-workflow-title">Workflow Builder</h1>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline" onclick="navigate('workflows')">Close</button>
+            <button class="btn btn-secondary" onclick="saveWorkflowTasks()"><i class="fa-solid fa-floppy-disk"></i> <span>Save Workflow</span></button>
+            <button class="btn btn-primary" onclick="openRunConsole()"><i class="fa-solid fa-play"></i> <span>Run Workflow</span></button>
+          </div>
+        </div>
+
+        <div class="builder-container">
+          <!-- Main visual layout of steps -->
+          <div class="builder-workspace-card">
+            <div class="builder-info-bar">
+              <div class="input-inline-group">
+                <label for="edit-workflow-name">Workflow Name:</label>
+                <input type="text" id="edit-workflow-name" placeholder="Workflow name">
+              </div>
+            </div>
+            
+            <div class="flow-chart">
+              <!-- Visual Start Input Node -->
+              <div class="flow-node start-node">
+                <div class="node-icon"><i class="fa-solid fa-keyboard"></i></div>
+                <div class="node-content">
+                  <h4>Workflow Trigger</h4>
+                  <p>Initial prompt entered by the user</p>
+                </div>
+              </div>
+
+              <!-- Node connector -->
+              <div class="node-connector"><i class="fa-solid fa-arrow-down-long"></i></div>
+
+              <!-- Task Chain Container -->
+              <div id="builder-tasks-chain">
+                <!-- Dynamic tasks injected here -->
+              </div>
+
+              <!-- Empty state tasks placeholder -->
+              <div id="empty-tasks-placeholder" class="empty-tasks-placeholder hidden">
+                <p>No steps in this workflow yet. Click below to add your first AI task!</p>
+              </div>
+
+              <!-- Node connector for addition -->
+              <div class="node-connector"><i class="fa-solid fa-plus-circle connect-add"></i></div>
+
+              <!-- Add Step Action -->
+              <button class="btn btn-add-step" onclick="addNewBuilderStep()">
+                <i class="fa-solid fa-plus"></i> Add AI Model Task
+              </button>
+
+              <!-- Node connector -->
+              <div class="node-connector"><i class="fa-solid fa-arrow-down-long"></i></div>
+
+              <!-- Visual End Output Node -->
+              <div class="flow-node end-node">
+                <div class="node-icon"><i class="fa-solid fa-display"></i></div>
+                <div class="node-content">
+                  <h4>Final Result Output</h4>
+                  <p>Dashboard display of the chained pipeline results</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- --- PANEL 4: SETTINGS --- -->
+      <section id="panel-settings" class="content-panel">
+        <div class="panel-header">
+          <div>
+            <h1>API Settings</h1>
+            <p class="panel-subtitle">Configure model tokens and environment variables</p>
+          </div>
+        </div>
+
+        <div class="settings-container">
+          <div class="settings-card">
+            <div class="settings-card-header">
+              <h3>Configure AI Provider Keys</h3>
+              <i class="fa-solid fa-key"></i>
+            </div>
+            <div class="settings-card-body">
+              <div class="alert alert-info">
+                <div class="alert-icon"><i class="fa-solid fa-circle-info"></i></div>
+                <div class="alert-body">
+                  <strong>Sandbox Mock Mode Active:</strong> If API keys are left blank, the orchestrator executes workflows in a simulated sandbox mode with realistic content outputs for testing.
+                </div>
+              </div>
+
+              <form id="settings-keys-form" onsubmit="saveApiKeys(event)">
+                <div class="form-group">
+                  <label for="openai-api-key">OpenAI API Key (GPT models)</label>
+                  <div class="input-password-wrapper">
+                    <input type="password" id="openai-api-key" placeholder="sk-...">
+                    <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility('openai-api-key')">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
+                  <small class="form-help" id="openai-status-lbl">Not configured. Defaults to Mock engine.</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="huggingface-api-key">Hugging Face API Key (Summary & Grammar)</label>
+                  <div class="input-password-wrapper">
+                    <input type="password" id="huggingface-api-key" placeholder="hf_...">
+                    <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility('huggingface-api-key')">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
+                  <small class="form-help" id="hf-status-lbl">Not configured. Defaults to Mock engine.</small>
+                </div>
+
+                <button type="submit" class="btn btn-secondary">
+                  <i class="fa-solid fa-floppy-disk"></i> Save Credentials
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- --- MODAL: CREATE WORKFLOW --- -->
+  <div id="modal-create-workflow" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Create New Workflow</h3>
+        <button class="modal-close-btn" onclick="closeCreateWorkflowModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="create-workflow-form" onsubmit="handleCreateWorkflowSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="new-workflow-name">Workflow Name</label>
+            <input type="text" id="new-workflow-name" required placeholder="e.g. LinkedIn Content Generator Chain">
+          </div>
+          <div class="form-group">
+            <label>Suggested Templates</label>
+            <div class="template-presets">
+              <div class="preset-card" onclick="applyPresetTemplate('LinkedIn Post Polish')">
+                <h5>LinkedIn Post Polish</h5>
+                <p>Content Gen ➜ Grammar Check ➜ Summary</p>
+              </div>
+              <div class="preset-card" onclick="applyPresetTemplate('Summarizer & Review')">
+                <h5>Quick Summarizer</h5>
+                <p>Custom Input ➜ Summary ➜ Polish</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeCreateWorkflowModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Workflow</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- --- RUN CONSOLE / EXECUTION TRACER DRAWER --- -->
+  <div id="run-console-drawer" class="drawer">
+    <div class="drawer-overlay" onclick="closeRunConsole()"></div>
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <h3><i class="fa-solid fa-terminal"></i> Workflow Execution Console</h3>
+        <button class="drawer-close-btn" onclick="closeRunConsole()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Input section -->
+        <div class="console-section console-input-section">
+          <label for="workflow-run-input">Initial User Input (Prompt):</label>
+          <textarea id="workflow-run-input" rows="3" placeholder="Write a LinkedIn post on AI..."></textarea>
+          <button class="btn btn-primary btn-block" id="btn-trigger-run" onclick="triggerWorkflowRun()">
+            <i class="fa-solid fa-circle-play"></i> <span>Execute Workflow</span>
+          </button>
+        </div>
+
+        <!-- Live Tracer section -->
+        <div class="console-section console-tracer-section hidden" id="console-tracer-container">
+          <div class="tracer-header">
+            <h4>Live Engine Trace</h4>
+            <span class="badge badge-running" id="tracer-overall-status">RUNNING</span>
+          </div>
+
+          <!-- Vertical execution step timeline -->
+          <div class="timeline" id="execution-timeline-trace">
+            <!-- Dynamic steps showing live status -->
+          </div>
+
+          <!-- Final Output showcase -->
+          <div class="final-output-box hidden" id="final-output-container">
+            <div class="final-output-header">
+              <span>Final Workflow Output</span>
+              <button class="btn-copy" onclick="copyFinalOutput()" title="Copy to Clipboard"><i class="fa-regular fa-copy"></i></button>
+            </div>
+            <pre class="final-output-content" id="final-output-text"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- --- MODAL: DETAILED RUN LOG --- -->
+  <div id="modal-log-detail" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-receipt"></i> Execution Log Detail</h3>
+        <button class="modal-close-btn" onclick="closeLogDetailModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="log-detail-modal-body">
+        <!-- Dynamic logs breakdown injected here -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeLogDetailModal()">Close Log</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript imports -->
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/builder.js"></script>
+</body>
+</html>
